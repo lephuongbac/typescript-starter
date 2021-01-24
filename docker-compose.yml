@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+  main:
+    build:
+      context: .
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - .env
+    ports:
+      - ${SERVICE_PORT}:${SERVICE_PORT}
+      - 9229:9229
+    command: npm run start:dev
+    networks:
+      - service_network
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:10.7
+    ports:
+      - 5432:5432
+    networks:
+      - service_network
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_NAME}
+      PG_DATA: /var/lib/postgresql/data
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  kafka:
+    image: wurstmeister/kafka:latest
+    ports:
+      - 9092:9092
+    networks:
+      - service_network
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+networks:
+  service_network:
+volumes:
+  pgdata:
